@@ -27,9 +27,9 @@ jobs:
     - uses: jkl1337/gh-actions-lua@v11
       with:
         luaVersion: ${{ matrix.luaVersion }}
+    - uses: jkl1337/gh-actions-luarocks@v5
     - name: install lib dep
       run: luarocks install htmlparser
-    - uses: jkl1337/gh-actions-luarocks@v5
     - name: test deps
       run: luarocks test --prepare ${{ env.DEV }}
     - name: dependencies
