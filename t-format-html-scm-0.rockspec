@@ -20,7 +20,7 @@ t.format.html: html object interface for `t` lib
 dependencies = {
   "lua >= 5.1",
   "t",
-  "htmlparser",
+  "htmlparser >= 0.3.9",
 }
 
 test_dependencies = {
