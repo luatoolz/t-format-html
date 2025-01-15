@@ -50,7 +50,6 @@ return function(x)
     if header then
       for m in gmatch.htmltags(header) do
         local bb = process(m)
---        print(loop, cost, found, balance, bb, m)
         if bb > ok then return true end
       end
     end

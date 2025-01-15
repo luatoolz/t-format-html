@@ -1,26 +1,14 @@
 local t=require "t"
 local is = t.is
 local checker = t.checker
+local pkg = t.pkg(...)
+local unescape = pkg.unescape
+local escape = pkg.escape
+local escaped = pkg.escaped
+
 htmlparser_opts = {silent=true, looplimit=32768}
 local htmlparser = require "htmlparser"
 local _ = htmlparser_opts
-
-local function unescape_html(x)
-  local str = x
-  str = string.gsub( str, '&apos;', "'" )
-  str = string.gsub( str, '&lt;', '<' )
-  str = string.gsub( str, '&gt;', '>' )
-  str = string.gsub( str, '&quot;', '"' )
-  str = string.gsub( str, '&q;', '"' )
-  str = string.gsub( str, '&a;', '&' )
-  str = string.gsub( str, '&s;', "'" )
-  str = string.gsub( str, '&g;', '>' )
-  str = string.gsub( str, '&l;', '<' )
---  str = string.gsub( str, '&#(%d+);', function(n) return string.char(n) end )
---  str = string.gsub( str, '&#x(%d+);', function(n) return string.char(tonumber(n,16)) end )
-  str = string.gsub( str, '&amp;', '&' ) -- Be sure to do this after all others
-  return str
-end
 
 -- ElementNode class
 local ElementNode = require "htmlparser.ElementNode"
@@ -40,17 +28,24 @@ local func = {
   text=class.ElementNode["textonly"],
   content=class.ElementNode["getcontent"],
 }
-local attr = {title=true, href=true, value=true}
+local attr = {title=true, href=true, value=true, content=true, type=true}
+local tables = {nodes=true, attributes=true}
 
 mt.ElementNode.__index = function(self, key)
+  if tables[key] then
+    return rawget(self, key) or {}
+  end
 	if type(key)=='number' then
-		return (self.nodes or {})[key] or {}
+    return self.nodes[key] or {}
 	end
 	if type(key)=='string' then
-		if attr[key] then return (self.attributes or {})[key] end
+		if attr[key] then
+      local rv = string.null(self.attributes[key])
+      if rv then return rv end
+    end
 		if func[key] then
       local rv = func[key](self)
-      if type(rv)=='string' then rv = unescape_html(rv):trim() end
+      if type(rv)=='string' then rv = string.null(unescape(rv):trim()) end
       return rv
 		end
 		if key=='next' then
@@ -59,27 +54,29 @@ mt.ElementNode.__index = function(self, key)
 		return rawget(self, key) or rawget(class.ElementNode, key)
 	end
 end
+mt.ElementNode.__mul = function(self, f)
+  return table.map(self.nodes, f)
+end
 
 local el__index = function(self, key)
+  if type(key)=='number' then
+    return rawget(self, key) or {}
+  end
 	if type(key)=='string' then
-		if func[key] or attr[key] then
-      local rv = {}
-      for _,v in pairs(self) do
-        table.insert(rv, v[key])
-      end
-      return rv
-		end
-		return rawget(self, key)
+    return rawget(self, key) or self[1][key]
 	end
 end
 
 local el_call = mt.ElementNode.__call
 mt.ElementNode.__call = function(self, ...)
   local rv = el_call(self, ...)
-  return setmetatable(rv, { __index = el__index })
+
+  return setmetatable(rv, { __name='ElementNodeList', __index = el__index, __mod = table.filter, __mul=table.map })
 end
 
 mt.Set.__index = function(self, key)
+  local el = rawget(SetInstance, key)
+  if el then return el end
 	if type(key)=='string' then
     if func[key] or attr[key] then
       local rv = {}
@@ -97,7 +94,14 @@ mt.Set.__index = function(self, key)
 end
 
 local types = checker({[htmlparser]=true, [mt.ElementNode]=true, [mt.Set]=true}, getmetatable)
-return setmetatable({}, {
+mt.ElementNode.__name = 'ElementNode'
+mt.Set.__name = 'Set'
+
+return setmetatable({
+  escape = escape,
+  unescape = unescape,
+  escaped = escaped,
+}, {
   __call = function(self, body, ...)
     if type(body)=='table' and (rawequal(getmetatable(self), getmetatable(body)) or types(body)) then return body end
     if type(body)=='string' and is.html(body) then return htmlparser.parse(body, ...) end
