@@ -6,7 +6,7 @@ describe('html', function()
     path = t.path
     format = t.format
     html = format.html
-    td = function(...) return path('testdata', ...).content end
+    td = function(...) return path('testdata', ...).file.content end
   end)
   it("meta", function()
     assert.is_true(is.callable(html))
