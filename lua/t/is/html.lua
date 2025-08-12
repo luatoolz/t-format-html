@@ -1,6 +1,6 @@
 local t=require 't'
 local tag = require 't.format.html.tag'
-local gmatch = t.gmatch
+local pat = t.pat
 local ok = 0.8
 
 return function(x)
@@ -48,12 +48,12 @@ return function(x)
     if not x:match('^%s*%<.*%>%s*$') then return nil end
     local header = x:match('^(.*%<%s*%/%s*head%s*%>)')
     if header then
-      for m in gmatch.htmltags(header) do
+      for m in pat.gmatch.htmltags(header) do
         local bb = process(m)
         if bb > ok then return true end
       end
     end
-    for m in gmatch.htmltags(header) do if process(m) > ok then return true end end
+    for m in pat.gmatch.htmltags(header) do if process(m) > ok then return true end end
   end
   return getcost() > ok or nil
 end

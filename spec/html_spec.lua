@@ -1,12 +1,12 @@
 describe('html', function()
   local t, is, path, format, html, td
   setup(function()
-    t = require "t"
+    t = require 't'
     is = t.is
-    path = t.path
+    path = t.fs.file
     format = t.format
     html = format.html
-    td = function(...) return path('testdata', ...).file.content end
+    td = function(...) return path('testdata', ...).content end
   end)
   it("meta", function()
     assert.is_true(is.callable(html))
@@ -14,7 +14,7 @@ describe('html', function()
   it("html", function()
     local data = td("content/cbsnews.com_texas")
     assert.is_true(is.html(data))
-		assert.equal('html', format % data)
+		assert.equal('html', next(format%data))
   end)
   it("root", function()
     local root = html(td("content/cbsnews.com_texas"))

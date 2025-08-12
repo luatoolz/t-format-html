@@ -6,7 +6,9 @@ local unescape = pkg.unescape
 local escape = pkg.escape
 local escaped = pkg.escaped
 
-htmlparser_opts = {silent=true, looplimit=32768}
+if not htmlparser_opts then
+  htmlparser_opts = {silent=true, looplimit=32768}
+end
 local htmlparser = require "htmlparser"
 local _ = htmlparser_opts
 
